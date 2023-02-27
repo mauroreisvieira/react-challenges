@@ -1,37 +1,10 @@
-import React, { useReducer, useState } from "react";
+import React, { useState } from "react";
 import { Navigation } from "../layouts/navigation";
 import { Main } from "../layouts/main";
 import { Typography } from "../components/Typography";
 import { Button } from "../components/button";
 
-const ARTIFACTS = {
-    X: (
-        <svg height="100%" viewBox="0 0 128 128" className="text-gray-900">
-            <path
-                stroke="rgb(84, 84, 84)"
-                strokeWidth={24}
-                d="M16,16L112,112"
-            />
-            <path
-                stroke="rgb(84, 84, 84)"
-                strokeWidth={24}
-                d="M112,16L16,112"
-            />
-        </svg>
-    ),
-    O: (
-        <svg width={40} viewBox="0 0 128 128" className="text-indigo-900">
-            <path
-                stroke="rgb(242, 235, 211)"
-                strokeDasharray={301.635}
-                strokeDashoffset={0}
-                d="M64,16A48,48 0 1,0 64,112A48,48 0 1,0 64,16"
-            />
-        </svg>
-    ),
-};
-
-const WINNING_SEQUENCES = [
+const lines = [
     [0, 1, 2],
     [3, 4, 5],
     [6, 7, 8],
@@ -42,140 +15,153 @@ const WINNING_SEQUENCES = [
     [2, 4, 6],
 ];
 
-type Players = {
-    firstPlayer?: string;
-    secondPlayer?: string;
-};
-
-type Piece = {
-    player?: string;
-    value: React.ReactNode;
-    reveal: boolean;
-};
-
-const TicTacToe = (): React.ReactElement => {
-    const [currentPlayer, setCurrentPlayer] = useState<string | undefined>(
-        "Mauro"
-    );
-
-    const [pieces, setPieces] = useState<Piece[]>(
-        new Array(9).fill({
-            player: undefined,
-            value: undefined,
-            reveal: false,
-        })
-    );
-
-    const [players, setPlayers] = useReducer(
-        (prev: Players, next: Partial<Players>) => ({ ...prev, ...next }),
-        {
-            firstPlayer: "Mauro",
-            secondPlayer: "Bruna",
+function calculateWinner(squares: string[]) {
+    for (let i = 0; i < lines.length; i++) {
+        const [a, b, c] = lines[i];
+        if (
+            squares[a] &&
+            squares[a] === squares[b] &&
+            squares[a] === squares[c]
+        ) {
+            return squares[a];
         }
-    );
+    }
+    return null;
+}
 
-    const onHandleChange = (
-        event: React.ChangeEvent<HTMLInputElement & HTMLTextAreaElement>
-    ): void => {
-        const { name, value } = event.target;
-        setPlayers({ ...players, [name]: value });
-    };
+const Square = ({ value, onSquareClick }): React.ReactElement => (
+    <div
+        className="p-12 text-center text-6xl border border-gray-500 cursor-pointer"
+        onClick={onSquareClick}
+    >
+        {value || "-"}
+    </div>
+);
 
-    const onHandleSubmit: React.FormEventHandler<HTMLFormElement> = (
-        event
-    ): void => {
-        event.preventDefault();
-
-        console.log("Start the Game!");
-        setCurrentPlayer(players.firstPlayer);
-    };
-
-    const onMove = (pos: number): void => {
-        if (!pieces[0].reveal) {
-            setPieces((prev) => {
-                const shallow = prev;
-                shallow[pos] = {
-                    reveal: true,
-                    player: currentPlayer,
-                    value: ARTIFACTS.X,
-                };
-
-                return {...prev, ...shallow};
-            });
+const Board = ({
+    xIsNext,
+    squares,
+    onPlay,
+}: {
+    xIsNext: boolean;
+    squares: string[];
+    onPlay: (value: string[]) => void;
+}): React.ReactElement => {
+    const handleClick = (i: number) => {
+        if (calculateWinner(squares) || squares[i]) {
+            return;
         }
+        const nextSquares = squares.slice();
+        if (xIsNext) {
+            nextSquares[i] = "X";
+        } else {
+            nextSquares[i] = "O";
+        }
+        onPlay(nextSquares);
     };
 
-    console.log(pieces);
+    const winner = calculateWinner(squares);
 
     return (
         <>
-            <Navigation />
-            <Main>
-                <div className="flex justify-between items-center">
-                    <Typography size="h1">Tic-Tac-Toe Game</Typography>
-                </div>
-                <form
-                    onSubmit={onHandleSubmit}
-                    className="flex flex-col gap-4 mb-4"
-                >
-                    <div>
-                        <label
-                            htmlFor="firstPlayer"
-                            className="block my-1 text-sm font-medium text-gray-700"
-                        >
-                            First Player
-                        </label>
-                        <input
-                            id="firstPlayer"
-                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-3"
-                            type="text"
-                            placeholder="Name of player..."
-                            value={players.firstPlayer}
-                            onChange={onHandleChange}
-                            name="firstPlayer"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label
-                            htmlFor="secondPlayer"
-                            className="block my-1 text-sm font-medium text-gray-700"
-                        >
-                            Second Player
-                        </label>
-                        <input
-                            id="secondPlayer"
-                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-3"
-                            type="text"
-                            placeholder="Name of player..."
-                            value={players.secondPlayer}
-                            onChange={onHandleChange}
-                            name="secondPlayer"
-                            required
-                        />
-                    </div>
-                    <Button size="lg" className="justify-center" type="submit">
-                        Start Game
-                    </Button>
-                </form>
+            <Typography size="h4">
+                {winner
+                    ? `Winner: ${winner}`
+                    : `Next player: ${xIsNext ? "X" : "O"}`}
+            </Typography>
+            <div className="grid grid-cols-3 gap-4">
+                <Square
+                    value={squares[0]}
+                    onSquareClick={() => handleClick(0)}
+                />
+                <Square
+                    value={squares[1]}
+                    onSquareClick={() => handleClick(1)}
+                />
+                <Square
+                    value={squares[2]}
+                    onSquareClick={() => handleClick(2)}
+                />
 
-                <p className="my-2">
-                    Player: <strong>{currentPlayer}</strong>
-                </p>
-                <div className="grid grid-cols-3">
-                    {Object.values(pieces).map(({ value }, key) => (
-                        <div
-                            key={key}
-                            className="border border-1 flex items-center justify-center h-40"
-                            onClick={() => onMove(key)}
-                        >
-                            {value}
-                        </div>
-                    ))}
-                </div>
-            </Main>
+                <Square
+                    value={squares[3]}
+                    onSquareClick={() => handleClick(3)}
+                />
+                <Square
+                    value={squares[4]}
+                    onSquareClick={() => handleClick(4)}
+                />
+                <Square
+                    value={squares[5]}
+                    onSquareClick={() => handleClick(5)}
+                />
+
+                <Square
+                    value={squares[6]}
+                    onSquareClick={() => handleClick(6)}
+                />
+                <Square
+                    value={squares[7]}
+                    onSquareClick={() => handleClick(7)}
+                />
+                <Square
+                    value={squares[8]}
+                    onSquareClick={() => handleClick(8)}
+                />
+            </div>
         </>
     );
 };
+
+const Game = (): React.ReactElement => {
+    const [history, setHistory] = useState([Array(9).fill(null)]);
+    const [currentMove, setCurrentMove] = useState(0);
+    const xIsNext = currentMove % 2 === 0;
+    const currentSquares: string[] = history[currentMove];
+
+    const handlePlay = (nextSquares) => {
+        const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
+        setHistory(nextHistory);
+        setCurrentMove(nextHistory.length - 1);
+    };
+
+    const jumpTo = (nextMove) => {
+        setCurrentMove(nextMove);
+    };
+
+    return (
+        <>
+            <div className="game-board">
+                <Board
+                    xIsNext={xIsNext}
+                    squares={currentSquares}
+                    onPlay={handlePlay}
+                />
+            </div>
+            <div className="mt-12">
+                <ul className="flex flex-col gap-2">
+                    {history.map((squares, move) => (
+                        <li key={move}>
+                            <Button onClick={() => jumpTo(move)}>
+                                {move > 0
+                                    ? `Go to move #${move}`
+                                    : "Go to game start"}
+                            </Button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </>
+    );
+};
+
+const TicTacToe = () => (
+    <>
+        <Navigation />
+        <Main>
+            <Game />
+        </Main>
+    </>
+);
 
 export default TicTacToe;
