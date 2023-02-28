@@ -14,11 +14,7 @@ const Memory = (): React.ReactElement => {
         <>
             <Navigation />
             <Main>
-                <div className="flex justify-between items-center">
-                    <Typography size="h1">
-                        Memory Game
-                    </Typography>
-                </div>
+                <Typography size="h1">Memory Game</Typography>
             </Main>
         </>
     );
